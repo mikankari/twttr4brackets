@@ -1,0 +1,57 @@
+#io-github-mikankari-twttr4brackets .container2 {
+  padding: 10px 10px 0; }
+#io-github-mikankari-twttr4brackets .content2 {
+  margin-left: 10px; }
+#io-github-mikankari-twttr4brackets .clearfix {
+  overflow: hidden; }
+  #io-github-mikankari-twttr4brackets .clearfix > div {
+    float: left; }
+#io-github-mikankari-twttr4brackets .scrollable {
+  height: 100%;
+  overflow-y: scroll; }
+#io-github-mikankari-twttr4brackets .icon img {
+  border-radius: 3px;
+  width: 48px;
+  height: 48px; }
+#io-github-mikankari-twttr4brackets .toolbar + div {
+  height: calc(100% - 37px); }
+#io-github-mikankari-twttr4brackets .alert-danger {
+  background-color: #f2dede;
+  border-color: #eed3d7;
+  color: #b94a48; }
+#io-github-mikankari-twttr4brackets .alert-success {
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+  color: #468847; }
+#io-github-mikankari-twttr4brackets .me > div {
+  margin-bottom: 10px;
+  position: relative; }
+#io-github-mikankari-twttr4brackets .me .btn {
+  margin: 0; }
+#io-github-mikankari-twttr4brackets .me .icon {
+  margin-left: 2px; }
+#io-github-mikankari-twttr4brackets .me .control {
+  position: absolute;
+  right: 0; }
+#io-github-mikankari-twttr4brackets .me [name="text"] {
+  width: 206px; }
+#io-github-mikankari-twttr4brackets .timeline {
+  width: 50%;
+  width: calc(100% - 230px);
+  max-width: 530px; }
+#io-github-mikankari-twttr4brackets .tweet {
+  padding-bottom: 15px; }
+  #io-github-mikankari-twttr4brackets .tweet .content2 {
+    width: 80%;
+    width: calc(100% - 60px);
+    margin-left: 10px; }
+  #io-github-mikankari-twttr4brackets .tweet .icon {
+    margin-left: 2px;
+    margin-top: 3px; }
+  #io-github-mikankari-twttr4brackets .tweet .name {
+    font-weight: bold; }
+  #io-github-mikankari-twttr4brackets .tweet small {
+    margin-left: 0.5em; }
+  #io-github-mikankari-twttr4brackets .tweet .time {
+    font-size: 0.85em;
+    float: right; }
