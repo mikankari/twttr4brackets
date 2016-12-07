@@ -16,8 +16,8 @@
   _stream = null;
 
   _config = {
-    "consumer_key": "EW5z6GixlmldAlo0l6gLItYOT",
-    "consumer_secret": "nqRsY1s27De4zsG9IoFsAGpCp8i4mq3wmUXXmyjQH9Urox8suK",
+    "consumer_key": "",
+    "consumer_secret": "",
     "token_key": "",
     "token_secret": "",
     "proxy": ""
