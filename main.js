@@ -1,26 +1,12 @@
 define(function(require, exports, module) {
-  var Dialog, ExtensionUtils, NativeApp, NodeDomain, PreferencesManager, WorkspaceManager, configure, connect, createAlert, createIcon, createLog, createPanel, domain, icon, iconClicked, panel, tweetDivision;
-  WorkspaceManager = brackets.getModule("view/WorkspaceManager");
+  var ExtensionUtils, NativeApp, NodeDomain, PreferencesManager, WorkspaceManager, configure, connect, createAlert, createIcon, createLog, createPanel, domain, extension_id, extension_path, icon, iconClicked, panel, tweetDivision;
   NodeDomain = brackets.getModule("utils/NodeDomain");
-  ExtensionUtils = brackets.getModule("utils/ExtensionUtils");
-  NativeApp = brackets.getModule("utils/NativeApp");
-  Dialog = brackets.getModule("widgets/Dialogs");
   PreferencesManager = brackets.getModule("preferences/PreferencesManager");
-  createLog = function(message, error) {
-    var level;
-    if (error == null) {
-      error = null;
-    }
-    level = error != null ? "error" : "log";
-    console[level]("[ext-" + level + "] [twttr] " + message);
-    return console[level]("[ext-" + level + "] [twttr] " + (JSON.stringify(error)));
-  };
-  createAlert = function(message, error) {
-    if (error == null) {
-      error = null;
-    }
-    return $("<div class=\"alert alert-" + (error != null ? "danger" : "success") + "\"></div>").append($("<div>" + message + "</div>")).append($("<div>" + (error != null ? JSON.stringify(error) : "") + "</div>")).hide().prependTo("#io-github-mikankari-twttr4brackets .timeline").fadeIn();
-  };
+  NativeApp = brackets.getModule("utils/NativeApp");
+  WorkspaceManager = brackets.getModule("view/WorkspaceManager");
+  ExtensionUtils = brackets.getModule("utils/ExtensionUtils");
+  extension_id = "twttr4brackets";
+  extension_path = ExtensionUtils.getModulePath(module);
   configure = function() {
     var config, value, _i, _len, _ref;
     config = {};
@@ -29,19 +15,26 @@ define(function(require, exports, module) {
       value = _ref[_i];
       config[value] = PreferencesManager.get(value);
     }
-    return domain.exec("configure", config, ExtensionUtils.getModulePath(module, "config.json"));
+    return domain.exec("configure", config, "" + extension_path + "config.json");
   };
   connect = function() {
     createAlert("connecting...");
     return domain.exec("connect").done(function(user) {
-      $("#io-github-mikankari-twttr4brackets .me img").attr("src", user.profile_image_url);
-      $("#io-github-mikankari-twttr4brackets .login").text("Logout");
+      $("#" + extension_id + " .me img").attr("src", user.profile_image_url);
+      $("#" + extension_id + " .login").text("Logout");
       return createAlert("connected");
     }).fail(function(error) {
-      $("#io-github-mikankari-twttr4brackets .me img").attr("src", "" + (ExtensionUtils.getModulePath(module, "tweet-default-icon.png")));
-      $("#io-github-mikankari-twttr4brackets .login").text("Login");
+      $("#" + extension_id + " .me img").attr("src", "" + extension_path + "tweet-default-icon.png");
+      $("#" + extension_id + " .login").text("Login");
       return createAlert("connecting failed", error);
     });
+  };
+  createIcon = function() {
+    return $("<a href=\"#\"></a>").css({
+      "backgroundImage": "url(\"" + extension_path + "icon.svg\")",
+      "backgroundPosition": "0 0",
+      "backgroundSize": "100%"
+    }).on("click", iconClicked).appendTo($("#main-toolbar .buttons"));
   };
   iconClicked = function() {
     var isvisible;
@@ -54,19 +47,32 @@ define(function(require, exports, module) {
       return connect();
     }
   };
-  createIcon = function() {
-    return $("<a href=\"#\"></a>").css({
-      "backgroundImage": "url(\"" + (ExtensionUtils.getModulePath(module, "icon.svg")) + "\")",
-      "backgroundPosition": "0 0",
-      "backgroundSize": "100%"
-    }).on("click", iconClicked).appendTo($("#main-toolbar .buttons"));
-  };
   createPanel = function() {
     return $(require("text!panel.html")).find(".close").on("click", iconClicked).end();
   };
+  createLog = function(message, error) {
+    var level;
+    if (error == null) {
+      error = null;
+    }
+    level = error != null ? "error" : "log";
+    console[level]("[ext-" + level + "] [" + extension_id + "] " + message);
+    return console[level]("[ext-" + level + "] [" + extension_id + "] " + (JSON.stringify(error)));
+  };
+  createAlert = function(message, error) {
+    if (error == null) {
+      error = null;
+    }
+    return $("<div class=\"alert alert-" + (error != null ? "error" : "success") + "\"></div>").append($("<div>" + message + "</div>")).append($("<div>" + (error != null ? JSON.stringify(error) : "") + "</div>")).hide().prependTo("#" + extension_id + " .timeline").fadeIn();
+  };
   panel = WorkspaceManager.createBottomPanel("io.github.mikankari.twttr4brackets", createPanel(), 200);
+  tweetDivision = $("#" + extension_id + " .tweet").remove();
   icon = createIcon();
-  domain = new NodeDomain("io-github-mikankari-twttr4brackets-streaming", ExtensionUtils.getModulePath(module, "domain"));
+  ExtensionUtils.loadStyleSheet(module, "panel.css");
+  domain = new NodeDomain("" + extension_id + "-streaming", "" + extension_path + "domain");
+  domain.exec("configure", null, "" + extension_path + "config.json").done(function(config) {
+    return configure();
+  });
   domain.on("data", function(event, tweet) {
     var oldest, time;
     time = Intl.DateTimeFormat(void 0, {
@@ -75,29 +81,23 @@ define(function(require, exports, module) {
       "hour12": false,
       "minute": "2-digit"
     }).format(new Date(tweet.created_at));
-    tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(time).end().find(".content2 .text").text(tweet.text).end().hide().prependTo("#io-github-mikankari-twttr4brackets .timeline").fadeIn();
-    oldest = $("#io-github-mikankari-twttr4brackets .tweet:last-child");
+    tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(time).end().find(".content2 .text").text(tweet.text).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
+    oldest = $("#" + extension_id + " .tweet:last-child");
     if (oldest.siblings().length >= 200) {
       oldest.remove();
     }
-    return $("#io-github-mikankari-twttr4brackets .alert").remove();
+    return $("#" + extension_id + " .alert").remove();
   });
   domain.on("event", function(event, other) {
     return createLog("stream event", other);
   });
   domain.on("error", function(event, error) {
-    createLog("getting timeline failed.", error);
     return createAlert("getting timeline failed.", error);
   });
   domain.on("open_url", function(event, url) {
     return NativeApp.openURLInDefaultBrowser(url);
   });
-  domain.exec("configure", null, ExtensionUtils.getModulePath(module, "config.json")).done(function(config) {
-    return configure();
-  });
-  tweetDivision = $("#io-github-mikankari-twttr4brackets .tweet").remove();
-  ExtensionUtils.loadStyleSheet(module, "panel.css");
-  $("#io-github-mikankari-twttr4brackets form").on("submit", function(event) {
+  $("#" + extension_id + " form").on("submit", function(event) {
     var text;
     event.preventDefault();
     text = $(event.target).find("[name=text]").val();
@@ -107,7 +107,7 @@ define(function(require, exports, module) {
       return createAlert("tweeting failed.", error);
     });
   });
-  return $("#io-github-mikankari-twttr4brackets .login").on("click", function(event) {
+  return $("#" + extension_id + " .login").on("click", function(event) {
     return domain.exec("authenticate").done(function() {
       configure();
       return connect();

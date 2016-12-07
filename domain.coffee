@@ -6,7 +6,6 @@ FileSystem = require "fs"
 _domainManager = null
 _twitter = null
 _stream = null
-_server = null
 _config = {
 	"consumer_key": "EW5z6GixlmldAlo0l6gLItYOT",
 	"consumer_secret": "nqRsY1s27De4zsG9IoFsAGpCp8i4mq3wmUXXmyjQH9Urox8suK",
@@ -14,11 +13,7 @@ _config = {
 	"token_secret": ""
 	"proxy": ""
 }
-
-_createLog = (message, error = null) ->
-	level = if error? then "error" else "log"
-	console[level] "[twttr] #{message}"
-	console.error "[twttr] #{JSON.stringify error}" if level is "error"
+_domain_id = "twttr4brackets-streaming"
 
 _connect = (callback) ->
 	_twitter = new Twitter {
@@ -44,12 +39,12 @@ _connect = (callback) ->
 				_twitter.stream "user", (stream) ->
 					stream.on "data", (tweet) ->
 						type = if tweet.text? then "data" else "event"
-						_domainManager.emitEvent "io-github-mikankari-twttr4brackets-streaming", type, tweet
+						_domainManager.emitEvent _domain_id, type, tweet
 					stream.on "error", (error) ->
-						_domainManager.emitEvent "io-github-mikankari-twttr4brackets-streaming", "error", error
+						_domainManager.emitEvent _domain_id, "error", error
 						_stream = null
 					stream.on "end", ->
-						_domainManager.emitEvent "io-github-mikankari-twttr4brackets-streaming", "event", {"disconnect":{}}
+						_domainManager.emitEvent _domain_id, "event", {"disconnect": true}
 						_stream = null
 					_stream = stream;
 			
@@ -62,7 +57,7 @@ _get = (callback) ->
 		callback error
 		if not error?
 			tweets.reverse()
-			_domainManager.emitEvent "io-github-mikankari-twttr4brackets-streaming", "data", value for value in tweets
+			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 
 _post = (text, callback) ->
 	_twitter.post "statuses/update", {
@@ -78,7 +73,8 @@ _authenticate = (callback) ->
 	else
 		server = HTTP.createServer (request, response) ->
 			response.writeHead 200, {"Content-Type": "text/html"}
-			response.end("<p>this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>")
+			response.write "<p>see brackets. this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>"
+			response.end()
 
 			param = URL.parse request.url, true
 				.query
@@ -100,7 +96,7 @@ _authenticate = (callback) ->
 					"https://api.twitter.com/oauth/authorize?"
 					"oauth_token=#{data.oauth_token}"
 				].join ""
-				_domainManager.emitEvent "io-github-mikankari-twttr4brackets-streaming", "open_url", url
+				_domainManager.emitEvent _domain_id, "open_url", url
 
 _configure = (config, filename, callback) ->
 	if config?
@@ -125,15 +121,20 @@ _configure = (config, filename, callback) ->
 		else
 			callback null, createConfig()
 
+_createLog = (message, error = null) ->
+	level = if error? then "error" else "log"
+	console[level] "[#{_domain_id}] #{message}"
+	console.error "[#{_domain_id}] #{JSON.stringify error}" if level is "error"
+
 
 exports.init = (DomainManager) ->
-	if not DomainManager.hasDomain "io-github-mikankari-twttr4brackets-streaming"
-		DomainManager.registerDomain "io-github-mikankari-twttr4brackets-streaming", {
+	if not DomainManager.hasDomain _domain_id
+		DomainManager.registerDomain _domain_id, {
 			"major": 0, "minor": 1
 		}
 	_domainManager = DomainManager
 	
-	DomainManager.registerCommand "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerCommand _domain_id,
 		"connect",
 		_connect,
 		true,
@@ -143,17 +144,17 @@ exports.init = (DomainManager) ->
 			{
 				"name": "user"
 				"type": "object"
-				"description": "object of an authenticated user"
+				"description": "an authenticated user"
 			}
 		]
-	DomainManager.registerCommand "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerCommand _domain_id,
 		"get",
 		_get,
 		true,
 		"get 200 tweets of home_timeline. tweets send as the event",
 		[],
 		[]
-	DomainManager.registerCommand "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerCommand _domain_id,
 		"post",
 		_post,
 		true,
@@ -166,14 +167,14 @@ exports.init = (DomainManager) ->
 			}
 		],
 		[]
-	DomainManager.registerCommand "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerCommand _domain_id,
 		"authenticate",
 		_authenticate,
 		true,
-		"authenticate user",
+		"authenticate an user. fire the open-url event",
 		[],
 		[]
-	DomainManager.registerCommand "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerCommand _domain_id,
 		"configure",
 		_configure,
 		true,
@@ -182,51 +183,55 @@ exports.init = (DomainManager) ->
 			{
 				"name": "config"
 				"type": "object"
+				"description": "config to apply. set null to get config"
 			}
 			{
 				"name": "filename"
 				"type": "string"
+				"description": "if filename is'nt null, save to file or load from file"
 			}
 		],
 		[
 			{
 				"name": "config"
 				"type": "object"
+				"description": "current config"
 			}
 		]
 	
-	DomainManager.registerEvent "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerEvent _domain_id,
 		"data",
 		[
 			{
 				"name": "tweet"
 				"type": "object"
-				"description": "object of a tweet"
+				"description": "a tweet"
 			}
 		]
-	DomainManager.registerEvent "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerEvent _domain_id,
 		"event",
 		[
 			{
 				"name": "other"
 				"type": "object"
-				"description": "object of events"
+				"description": "timeline events"
 			}
 		]
-	DomainManager.registerEvent "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerEvent _domain_id,
 		"error",
 		[
 			{
 				"name": "error"
 				"type": "object"
-				"description": "object of a error"
+				"description": "getting tweet error"
 			}
 		]
-	DomainManager.registerEvent "io-github-mikankari-twttr4brackets-streaming",
+	DomainManager.registerEvent _domain_id,
 		"open_url",
 		[
 			{
 				"name": "url"
 				"type": "string"
+				"description": "url to open in browser"
 			}
 		]

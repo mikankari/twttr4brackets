@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _configure, _connect, _createLog, _domainManager, _get, _post, _server, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _configure, _connect, _createLog, _domainManager, _domain_id, _get, _post, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -15,8 +15,6 @@
 
   _stream = null;
 
-  _server = null;
-
   _config = {
     "consumer_key": "EW5z6GixlmldAlo0l6gLItYOT",
     "consumer_secret": "nqRsY1s27De4zsG9IoFsAGpCp8i4mq3wmUXXmyjQH9Urox8suK",
@@ -25,17 +23,7 @@
     "proxy": ""
   };
 
-  _createLog = function(message, error) {
-    var level;
-    if (error == null) {
-      error = null;
-    }
-    level = error != null ? "error" : "log";
-    console[level]("[twttr] " + message);
-    if (level === "error") {
-      return console.error("[twttr] " + (JSON.stringify(error)));
-    }
-  };
+  _domain_id = "twttr4brackets-streaming";
 
   _connect = function(callback) {
     _twitter = new Twitter({
@@ -62,15 +50,15 @@
             stream.on("data", function(tweet) {
               var type;
               type = tweet.text != null ? "data" : "event";
-              return _domainManager.emitEvent("io-github-mikankari-twttr4brackets-streaming", type, tweet);
+              return _domainManager.emitEvent(_domain_id, type, tweet);
             });
             stream.on("error", function(error) {
-              _domainManager.emitEvent("io-github-mikankari-twttr4brackets-streaming", "error", error);
+              _domainManager.emitEvent(_domain_id, "error", error);
               return _stream = null;
             });
             stream.on("end", function() {
-              _domainManager.emitEvent("io-github-mikankari-twttr4brackets-streaming", "event", {
-                "disconnect": {}
+              _domainManager.emitEvent(_domain_id, "event", {
+                "disconnect": true
               });
               return _stream = null;
             });
@@ -93,7 +81,7 @@
         _results = [];
         for (_i = 0, _len = tweets.length; _i < _len; _i++) {
           value = tweets[_i];
-          _results.push(_domainManager.emitEvent("io-github-mikankari-twttr4brackets-streaming", "data", value));
+          _results.push(_domainManager.emitEvent(_domain_id, "data", value));
         }
         return _results;
       }
@@ -120,7 +108,8 @@
         response.writeHead(200, {
           "Content-Type": "text/html"
         });
-        response.end("<p>this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>");
+        response.write("<p>see brackets. this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>");
+        response.end();
         param = URL.parse(request.url, true).query;
         _twitter.post("oauth/access_token", param, function(error, data, response) {
           if (error == null) {
@@ -139,7 +128,7 @@
         var url;
         if (error == null) {
           url = ["https://api.twitter.com/oauth/authorize?", "oauth_token=" + data.oauth_token].join("");
-          return _domainManager.emitEvent("io-github-mikankari-twttr4brackets-streaming", "open_url", url);
+          return _domainManager.emitEvent(_domain_id, "open_url", url);
         }
       });
     }
@@ -176,69 +165,85 @@
     }
   };
 
+  _createLog = function(message, error) {
+    var level;
+    if (error == null) {
+      error = null;
+    }
+    level = error != null ? "error" : "log";
+    console[level]("[" + _domain_id + "] " + message);
+    if (level === "error") {
+      return console.error("[" + _domain_id + "] " + (JSON.stringify(error)));
+    }
+  };
+
   exports.init = function(DomainManager) {
-    if (!DomainManager.hasDomain("io-github-mikankari-twttr4brackets-streaming")) {
-      DomainManager.registerDomain("io-github-mikankari-twttr4brackets-streaming", {
+    if (!DomainManager.hasDomain(_domain_id)) {
+      DomainManager.registerDomain(_domain_id, {
         "major": 0,
         "minor": 1
       });
     }
     _domainManager = DomainManager;
-    DomainManager.registerCommand("io-github-mikankari-twttr4brackets-streaming", "connect", _connect, true, "connect stream for getting tweets of home_timeline. tweets and errors send as events", [], [
+    DomainManager.registerCommand(_domain_id, "connect", _connect, true, "connect stream for getting tweets of home_timeline. tweets and errors send as events", [], [
       {
         "name": "user",
         "type": "object",
-        "description": "object of an authenticated user"
+        "description": "an authenticated user"
       }
     ]);
-    DomainManager.registerCommand("io-github-mikankari-twttr4brackets-streaming", "get", _get, true, "get 200 tweets of home_timeline. tweets send as the event", [], []);
-    DomainManager.registerCommand("io-github-mikankari-twttr4brackets-streaming", "post", _post, true, "post a tweet", [
+    DomainManager.registerCommand(_domain_id, "get", _get, true, "get 200 tweets of home_timeline. tweets send as the event", [], []);
+    DomainManager.registerCommand(_domain_id, "post", _post, true, "post a tweet", [
       {
         "name": "text",
         "type": "string",
         "description": "text of a tweet"
       }
     ], []);
-    DomainManager.registerCommand("io-github-mikankari-twttr4brackets-streaming", "authenticate", _authenticate, true, "authenticate user", [], []);
-    DomainManager.registerCommand("io-github-mikankari-twttr4brackets-streaming", "configure", _configure, true, "configure for connection", [
+    DomainManager.registerCommand(_domain_id, "authenticate", _authenticate, true, "authenticate an user. fire the open-url event", [], []);
+    DomainManager.registerCommand(_domain_id, "configure", _configure, true, "configure for connection", [
       {
         "name": "config",
-        "type": "object"
+        "type": "object",
+        "description": "config to apply. set null to get config"
       }, {
         "name": "filename",
-        "type": "string"
+        "type": "string",
+        "description": "if filename is'nt null, save to file or load from file"
       }
     ], [
       {
         "name": "config",
-        "type": "object"
+        "type": "object",
+        "description": "current config"
       }
     ]);
-    DomainManager.registerEvent("io-github-mikankari-twttr4brackets-streaming", "data", [
+    DomainManager.registerEvent(_domain_id, "data", [
       {
         "name": "tweet",
         "type": "object",
-        "description": "object of a tweet"
+        "description": "a tweet"
       }
     ]);
-    DomainManager.registerEvent("io-github-mikankari-twttr4brackets-streaming", "event", [
+    DomainManager.registerEvent(_domain_id, "event", [
       {
         "name": "other",
         "type": "object",
-        "description": "object of events"
+        "description": "timeline events"
       }
     ]);
-    DomainManager.registerEvent("io-github-mikankari-twttr4brackets-streaming", "error", [
+    DomainManager.registerEvent(_domain_id, "error", [
       {
         "name": "error",
         "type": "object",
-        "description": "object of a error"
+        "description": "getting tweet error"
       }
     ]);
-    return DomainManager.registerEvent("io-github-mikankari-twttr4brackets-streaming", "open_url", [
+    return DomainManager.registerEvent(_domain_id, "open_url", [
       {
         "name": "url",
-        "type": "string"
+        "type": "string",
+        "description": "url to open in browser"
       }
     ]);
   };
