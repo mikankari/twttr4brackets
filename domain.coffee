@@ -72,7 +72,10 @@ _authenticate = (callback) ->
 		callback null
 	else
 		server = HTTP.createServer (request, response) ->
-			response.writeHead 200, {"Content-Type": "text/html"}
+			response.writeHead 200, {
+				"Content-Type": "text/html"
+				"Connection": "close"
+			}
 			response.write "<p>see brackets. this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>"
 			response.end()
 
@@ -83,7 +86,7 @@ _authenticate = (callback) ->
 					_config.token_key = data.oauth_token
 					_config.token_secret = data.oauth_token_secret
 				callback error
-
+		server.on "connection", ->
 			server.close()
 		server.listen 0
 		info = server.address()

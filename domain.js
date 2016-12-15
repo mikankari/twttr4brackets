@@ -106,18 +106,21 @@
       server = HTTP.createServer(function(request, response) {
         var param;
         response.writeHead(200, {
-          "Content-Type": "text/html"
+          "Content-Type": "text/html",
+          "Connection": "close"
         });
         response.write("<p>see brackets. this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>");
         response.end();
         param = URL.parse(request.url, true).query;
-        _twitter.post("oauth/access_token", param, function(error, data, response) {
+        return _twitter.post("oauth/access_token", param, function(error, data, response) {
           if (error == null) {
             _config.token_key = data.oauth_token;
             _config.token_secret = data.oauth_token_secret;
           }
           return callback(error);
         });
+      });
+      server.on("connection", function() {
         return server.close();
       });
       server.listen(0);
