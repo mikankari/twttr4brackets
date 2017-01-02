@@ -74,7 +74,7 @@ define(function(require, exports, module) {
     return configure();
   });
   domain.on("data", function(event, tweet) {
-    var created_at_html, entities_html, media, oldest, text_html, url, _base, _base1, _i, _j, _len, _len1, _ref, _ref1;
+    var created_at_html, entities_html, hashtag, media, oldest, text_html, url, _base, _base1, _base2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
     created_at_html = Intl.DateTimeFormat(void 0, {
       "weekday": "short",
       "hour": "numeric",
@@ -104,6 +104,14 @@ define(function(require, exports, module) {
       if (url.expanded_url != null) {
         text_html = text_html.replace(url.url, "<a href=\"" + url.expanded_url + "\" target=\"_blank\">" + url.display_url + "</a>");
       }
+    }
+    if ((_base2 = tweet.entities).hashtags == null) {
+      _base2.hashtags = [];
+    }
+    _ref2 = tweet.entities.hashtags;
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      hashtag = _ref2[_k];
+      text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + hashtag.text + "\" target=\"_blank\">#" + hashtag.text + "</a>");
     }
     tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
     oldest = $("#" + extension_id + " .tweet:last-child");
