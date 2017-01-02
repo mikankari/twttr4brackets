@@ -74,14 +74,38 @@ define(function(require, exports, module) {
     return configure();
   });
   domain.on("data", function(event, tweet) {
-    var oldest, time;
-    time = Intl.DateTimeFormat(void 0, {
+    var created_at_html, entities_html, media, oldest, text_html, url, _base, _base1, _i, _j, _len, _len1, _ref, _ref1;
+    created_at_html = Intl.DateTimeFormat(void 0, {
       "weekday": "short",
       "hour": "numeric",
       "hour12": false,
       "minute": "2-digit"
     }).format(new Date(tweet.created_at));
-    tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(time).end().find(".content2 .text").text(tweet.text).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
+    entities_html = "";
+    text_html = "<span>" + tweet.text + "</span>";
+    if (tweet.extended_entities == null) {
+      tweet.extended_entities = {};
+    }
+    if ((_base = tweet.extended_entities).media == null) {
+      _base.media = [];
+    }
+    _ref = tweet.extended_entities.media;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      media = _ref[_i];
+      entities_html += "<a href=\"" + media.expanded_url + "\" target=\"_blank\"><img src=\"" + media.media_url + ":thumb\"></a>";
+      text_html = text_html.replace(media.url, "");
+    }
+    if ((_base1 = tweet.entities).urls == null) {
+      _base1.urls = [];
+    }
+    _ref1 = tweet.entities.urls;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      url = _ref1[_j];
+      if (url.expanded_url != null) {
+        text_html = text_html.replace(url.url, "<a href=\"" + url.expanded_url + "\" target=\"_blank\">" + url.display_url + "</a>");
+      }
+    }
+    tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
     oldest = $("#" + extension_id + " .tweet:last-child");
     if (oldest.siblings().length >= 200) {
       oldest.remove();

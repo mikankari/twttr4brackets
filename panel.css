@@ -13,6 +13,11 @@
   border-radius: 3px;
   width: 48px;
   height: 48px; }
+#twttr4brackets .attachment img {
+  margin-top: 0.5em;
+  margin-right: 5px;
+  border-radius: 3px;
+  height: 100px; }
 #twttr4brackets .alert-error {
   background-color: #f2dede;
   border-color: #eed3d7;

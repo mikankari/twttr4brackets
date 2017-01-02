@@ -92,13 +92,27 @@ define (require, exports, module) ->
 			configure()
 	
 	domain.on "data", (event, tweet) ->
-		time = Intl.DateTimeFormat undefined, {
+		created_at_html = Intl.DateTimeFormat undefined, {
 			"weekday": "short"
 			"hour": "numeric"
 			"hour12": false
 			"minute": "2-digit"
 		}
 			.format new Date tweet.created_at
+
+		entities_html = ""
+		text_html = "<span>#{tweet.text}</span>"
+
+		tweet.extended_entities ?= {}
+		tweet.extended_entities.media ?= []
+		for media in tweet.extended_entities.media
+			entities_html += "<a href=\"#{media.expanded_url}\" target=\"_blank\"><img src=\"#{media.media_url}:thumb\"></a>"
+			text_html = text_html.replace media.url, ""
+
+		tweet.entities.urls ?= []
+		for url in tweet.entities.urls when url.expanded_url?
+			text_html = text_html.replace url.url, "<a href=\"#{url.expanded_url}\" target=\"_blank\">#{url.display_url}</a>"
+
 		tweetDivision.clone()
 			.find ".icon img"
 				.attr "src", tweet.user.profile_image_url
@@ -108,10 +122,13 @@ define (require, exports, module) ->
 				.append $ "<small>@#{tweet.user.screen_name}</small>"
 				.end()
 			.find ".content2 .time"
-				.text time
+				.text created_at_html
 				.end()
 			.find ".content2 .text"
-				.text tweet.text
+				.append $ text_html
+				.end()
+			.find ".content2 .attachment"
+				.append entities_html
 				.end()
 			.hide()
 			.prependTo "##{extension_id} .timeline"
