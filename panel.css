@@ -13,7 +13,7 @@
   border-radius: 3px;
   width: 48px;
   height: 48px; }
-#twttr4brackets .attachment img {
+#twttr4brackets a img {
   margin-top: 0.5em;
   margin-right: 5px;
   border-radius: 3px;
@@ -41,7 +41,7 @@
 #twttr4brackets .timeline {
   width: 50%;
   width: calc(100% - 230px);
-  max-width: 530px; }
+  max-width: 552px; }
 #twttr4brackets .tweet {
   padding-bottom: 15px; }
   #twttr4brackets .tweet .content2 {
@@ -58,3 +58,8 @@
   #twttr4brackets .tweet .time {
     font-size: 0.85em;
     float: right; }
+#twttr4brackets .attachment .tweet {
+  margin-top: 0.5em;
+  border: 1px solid #999;
+  border-radius: 5px;
+  padding: 5px; }

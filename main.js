@@ -1,5 +1,5 @@
 define(function(require, exports, module) {
-  var ExtensionUtils, NativeApp, NodeDomain, PreferencesManager, WorkspaceManager, configure, connect, createAlert, createIcon, createLog, createPanel, domain, extension_id, extension_path, icon, iconClicked, panel, tweetDivision;
+  var ExtensionUtils, NativeApp, NodeDomain, PreferencesManager, WorkspaceManager, configure, connect, createAlert, createIcon, createLog, createPanel, createTweetDivision, domain, extension_id, extension_path, icon, iconClicked, panel, tweetDivision;
   NodeDomain = brackets.getModule("utils/NodeDomain");
   PreferencesManager = brackets.getModule("preferences/PreferencesManager");
   NativeApp = brackets.getModule("utils/NativeApp");
@@ -50,6 +50,56 @@ define(function(require, exports, module) {
   createPanel = function() {
     return $(require("text!panel.html")).find(".close").on("click", iconClicked).end();
   };
+  createTweetDivision = function(tweet) {
+    var created_at_html, entities_html, hashtag, media, retweeted, text_html, url, _base, _base1, _base2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    created_at_html = Intl.DateTimeFormat(void 0, {
+      "weekday": "short",
+      "hour": "numeric",
+      "hour12": false,
+      "minute": "2-digit"
+    }).format(new Date(tweet.created_at));
+    entities_html = "";
+    text_html = "<span>" + tweet.text + "</span>";
+    retweeted = $("<div></div>");
+    if (tweet.retweeted_status != null) {
+      text_html = "";
+      retweeted = createTweetDivision(tweet.retweeted_status);
+    } else if (tweet.quoted_status != null) {
+      retweeted = createTweetDivision(tweet.quoted_status);
+    } else {
+      if (tweet.extended_entities == null) {
+        tweet.extended_entities = {};
+      }
+      if ((_base = tweet.extended_entities).media == null) {
+        _base.media = [];
+      }
+      _ref = tweet.extended_entities.media;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        media = _ref[_i];
+        entities_html += "<a href=\"" + media.expanded_url + "\" target=\"_blank\"><img src=\"" + media.media_url + ":thumb\"></a>";
+        text_html = text_html.replace(media.url, "");
+      }
+      if ((_base1 = tweet.entities).urls == null) {
+        _base1.urls = [];
+      }
+      _ref1 = tweet.entities.urls;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        url = _ref1[_j];
+        if (url.expanded_url != null) {
+          text_html = text_html.replace(url.url, "<a href=\"" + url.expanded_url + "\" target=\"_blank\">" + url.display_url + "</a>");
+        }
+      }
+      if ((_base2 = tweet.entities).hashtags == null) {
+        _base2.hashtags = [];
+      }
+      _ref2 = tweet.entities.hashtags;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        hashtag = _ref2[_k];
+        text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + hashtag.text + "\" target=\"_blank\">#" + hashtag.text + "</a>");
+      }
+    }
+    return tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append($(entities_html)).append(retweeted).end();
+  };
   createLog = function(message, error) {
     var level;
     if (error == null) {
@@ -74,46 +124,8 @@ define(function(require, exports, module) {
     return configure();
   });
   domain.on("data", function(event, tweet) {
-    var created_at_html, entities_html, hashtag, media, oldest, text_html, url, _base, _base1, _base2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
-    created_at_html = Intl.DateTimeFormat(void 0, {
-      "weekday": "short",
-      "hour": "numeric",
-      "hour12": false,
-      "minute": "2-digit"
-    }).format(new Date(tweet.created_at));
-    entities_html = "";
-    text_html = "<span>" + tweet.text + "</span>";
-    if (tweet.extended_entities == null) {
-      tweet.extended_entities = {};
-    }
-    if ((_base = tweet.extended_entities).media == null) {
-      _base.media = [];
-    }
-    _ref = tweet.extended_entities.media;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      media = _ref[_i];
-      entities_html += "<a href=\"" + media.expanded_url + "\" target=\"_blank\"><img src=\"" + media.media_url + ":thumb\"></a>";
-      text_html = text_html.replace(media.url, "");
-    }
-    if ((_base1 = tweet.entities).urls == null) {
-      _base1.urls = [];
-    }
-    _ref1 = tweet.entities.urls;
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      url = _ref1[_j];
-      if (url.expanded_url != null) {
-        text_html = text_html.replace(url.url, "<a href=\"" + url.expanded_url + "\" target=\"_blank\">" + url.display_url + "</a>");
-      }
-    }
-    if ((_base2 = tweet.entities).hashtags == null) {
-      _base2.hashtags = [];
-    }
-    _ref2 = tweet.entities.hashtags;
-    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-      hashtag = _ref2[_k];
-      text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + hashtag.text + "\" target=\"_blank\">#" + hashtag.text + "</a>");
-    }
-    tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
+    var oldest;
+    createTweetDivision(tweet).hide().prependTo("#" + extension_id + " .timeline").fadeIn();
     oldest = $("#" + extension_id + " .tweet:last-child");
     if (oldest.siblings().length >= 200) {
       oldest.remove();

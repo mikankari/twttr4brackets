@@ -61,6 +61,58 @@ define (require, exports, module) ->
 			.on "click", iconClicked
 			.end()
 	
+	createTweetDivision = (tweet) ->
+		created_at_html = Intl.DateTimeFormat undefined, {
+			"weekday": "short"
+			"hour": "numeric"
+			"hour12": false
+			"minute": "2-digit"
+		}
+			.format new Date tweet.created_at
+
+		entities_html = ""
+		text_html = "<span>#{tweet.text}</span>"
+		retweeted = $ "<div></div>"
+
+		if tweet.retweeted_status?
+			text_html = ""
+			retweeted = createTweetDivision tweet.retweeted_status
+		else if tweet.quoted_status?
+			retweeted = createTweetDivision tweet.quoted_status
+		else
+			tweet.extended_entities ?= {}
+			tweet.extended_entities.media ?= []
+			for media in tweet.extended_entities.media
+				entities_html += "<a href=\"#{media.expanded_url}\" target=\"_blank\"><img src=\"#{media.media_url}:thumb\"></a>"
+				text_html = text_html.replace media.url, ""
+
+			tweet.entities.urls ?= []
+			for url in tweet.entities.urls when url.expanded_url?
+				text_html = text_html.replace url.url, "<a href=\"#{url.expanded_url}\" target=\"_blank\">#{url.display_url}</a>"
+
+			tweet.entities.hashtags ?= []
+			for hashtag in tweet.entities.hashtags
+				text_html = text_html.replace "##{hashtag.text}", "<a href=\"https://twitter.com/hashtag/#{hashtag.text}\" target=\"_blank\">##{hashtag.text}</a>"
+
+		tweetDivision.clone()
+			.find ".icon img"
+				.attr "src", tweet.user.profile_image_url
+				.end()
+			.find ".content2 .name"
+				.text tweet.user.name
+				.append $ "<small>@#{tweet.user.screen_name}</small>"
+				.end()
+			.find ".content2 .time"
+				.text created_at_html
+				.end()
+			.find ".content2 .text"
+				.append $ text_html
+				.end()
+			.find ".content2 .attachment"
+				.append $ entities_html
+				.append retweeted
+				.end()
+
 	createLog = (message, error = null) ->
 		level = if error? then "error" else "log"
 		console[level] "[ext-#{level}] [#{extension_id}] #{message}"
@@ -92,48 +144,7 @@ define (require, exports, module) ->
 			configure()
 	
 	domain.on "data", (event, tweet) ->
-		created_at_html = Intl.DateTimeFormat undefined, {
-			"weekday": "short"
-			"hour": "numeric"
-			"hour12": false
-			"minute": "2-digit"
-		}
-			.format new Date tweet.created_at
-
-		entities_html = ""
-		text_html = "<span>#{tweet.text}</span>"
-
-		tweet.extended_entities ?= {}
-		tweet.extended_entities.media ?= []
-		for media in tweet.extended_entities.media
-			entities_html += "<a href=\"#{media.expanded_url}\" target=\"_blank\"><img src=\"#{media.media_url}:thumb\"></a>"
-			text_html = text_html.replace media.url, ""
-
-		tweet.entities.urls ?= []
-		for url in tweet.entities.urls when url.expanded_url?
-			text_html = text_html.replace url.url, "<a href=\"#{url.expanded_url}\" target=\"_blank\">#{url.display_url}</a>"
-
-		tweet.entities.hashtags ?= []
-		for hashtag in tweet.entities.hashtags
-			text_html = text_html.replace "##{hashtag.text}", "<a href=\"https://twitter.com/hashtag/#{hashtag.text}\" target=\"_blank\">##{hashtag.text}</a>"
-
-		tweetDivision.clone()
-			.find ".icon img"
-				.attr "src", tweet.user.profile_image_url
-				.end()
-			.find ".content2 .name"
-				.text tweet.user.name
-				.append $ "<small>@#{tweet.user.screen_name}</small>"
-				.end()
-			.find ".content2 .time"
-				.text created_at_html
-				.end()
-			.find ".content2 .text"
-				.append $ text_html
-				.end()
-			.find ".content2 .attachment"
-				.append entities_html
-				.end()
+		createTweetDivision tweet
 			.hide()
 			.prependTo "##{extension_id} .timeline"
 			.fadeIn()
