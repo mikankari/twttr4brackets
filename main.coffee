@@ -115,7 +115,7 @@ define (require, exports, module) ->
 
 		tweet.entities.hashtags ?= []
 		for hashtag in tweet.entities.hashtags
-			text_html = text_html.replace "##{hashtag.text}", "<a href=\"https://twitter.com/hashtag/#{hashtag.text}\" target=\"_blank\">##{hashtag.text}</a>"
+			text_html = text_html.replace "##{hashtag.text}", "<a href=\"https://twitter.com/hashtag/#{encodeURIComponent hashtag.text}\" target=\"_blank\">##{hashtag.text}</a>"
 
 		tweetDivision.clone()
 			.find ".icon img"

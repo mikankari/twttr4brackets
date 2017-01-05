@@ -111,7 +111,7 @@ define(function(require, exports, module) {
     _ref2 = tweet.entities.hashtags;
     for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
       hashtag = _ref2[_k];
-      text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + hashtag.text + "\" target=\"_blank\">#" + hashtag.text + "</a>");
+      text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + (encodeURIComponent(hashtag.text)) + "\" target=\"_blank\">#" + hashtag.text + "</a>");
     }
     tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
     oldest = $("#" + extension_id + " .tweet:last-child");
