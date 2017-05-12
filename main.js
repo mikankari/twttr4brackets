@@ -67,7 +67,7 @@
     ExtensionUtils.loadStyleSheet(module, "panel.css");
     domain = new NodeDomain("" + extension_id + "-streaming", "" + extension_path + "domain");
     domain.on("data", function(event, tweet) {
-      var created_at_html, entities_html, hashtag, media, oldest, text_html, url, _base, _base1, _base2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+      var created_at_html, entities_html, hashtag, media, oldest, text_html, url, user, _base, _base1, _base2, _base3, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3;
       created_at_html = Intl.DateTimeFormat(void 0, {
         "weekday": "short",
         "hour": "numeric",
@@ -105,6 +105,14 @@
       for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
         hashtag = _ref2[_k];
         text_html = text_html.replace("#" + hashtag.text, "<a href=\"https://twitter.com/hashtag/" + (encodeURIComponent(hashtag.text)) + "\" target=\"_blank\">#" + hashtag.text + "</a>");
+      }
+      if ((_base3 = tweet.entities).user_mentions == null) {
+        _base3.user_mentions = [];
+      }
+      _ref3 = tweet.entities.user_mentions;
+      for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+        user = _ref3[_l];
+        text_html = text_html.replace("@" + user.screen_name, "<a href=\"https://twitter.com/" + user.screen_name + "\" target=\"_blank\">@" + user.screen_name + "</a>");
       }
       tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
       oldest = $("#" + extension_id + " .tweet:last-child");

@@ -109,6 +109,10 @@ define (require, exports, module) ->
 		for hashtag in tweet.entities.hashtags
 			text_html = text_html.replace "##{hashtag.text}", "<a href=\"https://twitter.com/hashtag/#{encodeURIComponent hashtag.text}\" target=\"_blank\">##{hashtag.text}</a>"
 
+		tweet.entities.user_mentions ?= []
+		for user in tweet.entities.user_mentions
+			text_html = text_html.replace "@#{user.screen_name}", "<a href=\"https://twitter.com/#{user.screen_name}\" target=\"_blank\">@#{user.screen_name}</a>"
+
 		tweetDivision.clone()
 			.find ".icon img"
 				.attr "src", tweet.user.profile_image_url
