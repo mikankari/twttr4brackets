@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _configure, _connect, _createLog, _domainManager, _domain_id, _get, _post, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _configure, _connect, _createLog, _domainManager, _domain_id, _get, _post, _save, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -18,56 +18,45 @@
   _config = {
     "consumer_key": "",
     "consumer_secret": "",
-    "token_key": "",
-    "token_secret": "",
-    "proxy": ""
+    "access_token_key": "",
+    "access_token_secret": "",
+    "request_options": {
+      "proxy": ""
+    }
   };
 
   _domain_id = "twttr4brackets-streaming";
 
   _connect = function(callback) {
-    _twitter = new Twitter({
-      "consumer_key": _config.consumer_key,
-      "consumer_secret": _config.consumer_secret,
-      "access_token_key": _config.token_key,
-      "access_token_secret": _config.token_secret,
-      "request_options": {
-        "proxy": _config.proxy
-      }
-    });
+    _twitter = new Twitter(_config);
     if (_stream != null) {
-      return _twitter.get("account/verify_credentials", function(error, user, response) {
-        if (error != null) {
-          _stream.destroy();
-          _stream = null;
-        }
-        return callback(error, user);
-      });
-    } else {
-      return _twitter.get("account/verify_credentials", function(error, user, response) {
-        if (error == null) {
-          _twitter.stream("user", function(stream) {
-            stream.on("data", function(tweet) {
-              var type;
-              type = tweet.text != null ? "data" : "event";
-              return _domainManager.emitEvent(_domain_id, type, tweet);
-            });
-            stream.on("error", function(error) {
-              _domainManager.emitEvent(_domain_id, "error", error);
-              return _stream = null;
-            });
-            stream.on("end", function() {
-              _domainManager.emitEvent(_domain_id, "event", {
-                "disconnect": true
-              });
-              return _stream = null;
-            });
-            return _stream = stream;
-          });
-        }
-        return callback(error, user);
-      });
+      _stream.destroy();
     }
+    return _twitter.get("account/verify_credentials", function(error, user, response) {
+      if (error == null) {
+        _twitter.stream("user", function(stream) {
+          stream.on("data", function(tweet) {
+            var type;
+            type = tweet.text != null ? "data" : "event";
+            return _domainManager.emitEvent(_domain_id, type, tweet);
+          });
+          stream.on("error", function(error) {
+            _domainManager.emitEvent(_domain_id, "error", error);
+            return _stream = null;
+          });
+          stream.on("end", function() {
+            _domainManager.emitEvent(_domain_id, "event", {
+              "disconnect": true
+            });
+            return _stream = null;
+          });
+          return _stream = stream;
+        });
+      } else {
+        _stream = null;
+      }
+      return callback(error, user);
+    });
   };
 
   _get = function(callback) {
@@ -99,8 +88,8 @@
   _authenticate = function(callback) {
     var info, server;
     if (_stream != null) {
-      _config.token_key = "";
-      _config.token_secret = "";
+      _config.access_token_key = "";
+      _config.access_token_secret = "";
       return callback(null);
     } else {
       server = HTTP.createServer(function(request, response) {
@@ -114,8 +103,8 @@
         param = URL.parse(request.url, true).query;
         return _twitter.post("oauth/access_token", param, function(error, data, response) {
           if (error == null) {
-            _config.token_key = data.oauth_token;
-            _config.token_secret = data.oauth_token_secret;
+            _config.access_token_key = data.oauth_token;
+            _config.access_token_secret = data.oauth_token_secret;
           }
           return callback(error);
         });
@@ -138,34 +127,41 @@
   };
 
   _configure = function(config, filename, callback) {
-    var createConfig, data;
-    if (config != null) {
-      if (config.proxy != null) {
-        _config.proxy = config.proxy;
-      }
-      if (filename != null) {
-        data = JSON.stringify(_config);
-        return FileSystem.writeFile(filename, data, function(error) {
-          return callback(error);
-        });
-      } else {
-        return callback(null);
-      }
-    } else {
-      createConfig = function() {
-        return {
-          "proxy": _config.proxy
-        };
-      };
-      if (filename != null) {
-        return FileSystem.readFile(filename, function(error, data) {
-          _config = JSON.parse(data);
-          return callback(error, createConfig());
-        });
-      } else {
-        return callback(null, createConfig());
+    var key, value;
+    for (key in config) {
+      value = config[key];
+      if (_config[key] != null) {
+        _config[key] = value;
       }
     }
+    if (filename != null) {
+      return FileSystem.readFile(filename, function(error, data) {
+        var catched;
+        if (error == null) {
+          try {
+            data = JSON.parse(data);
+          } catch (_error) {
+            catched = _error;
+            error = catched;
+          }
+        } else {
+          data = [];
+        }
+        return _configure(data, null, function() {
+          return callback(error);
+        });
+      });
+    } else {
+      return callback(null);
+    }
+  };
+
+  _save = function(filename, callback) {
+    var data;
+    data = JSON.stringify(_config);
+    return FileSystem.writeFile(filename, data, function(error) {
+      return callback(error);
+    });
   };
 
   _createLog = function(message, error) {
@@ -204,21 +200,22 @@
       }
     ], []);
     DomainManager.registerCommand(_domain_id, "authenticate", _authenticate, true, "authenticate an user. fire the open-url event", [], []);
-    DomainManager.registerCommand(_domain_id, "configure", _configure, true, "configure for connection", [
+    DomainManager.registerCommand(_domain_id, "configure", _configure, true, "apply config and load from file for connection", [
       {
         "name": "config",
         "type": "object",
-        "description": "config to apply. set null to get config"
+        "description": "configure to apply"
       }, {
         "name": "filename",
         "type": "string",
-        "description": "if filename is'nt null, save to file or load from file"
+        "description": "optional. file to load config"
       }
-    ], [
+    ], []);
+    DomainManager.registerCommand(_domain_id, "save", _save, true, "save to file", [
       {
-        "name": "config",
-        "type": "object",
-        "description": "current config"
+        "name": "filename",
+        "type": "string",
+        "description": "file to save config"
       }
     ]);
     DomainManager.registerEvent(_domain_id, "data", [

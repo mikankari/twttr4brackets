@@ -10,17 +10,16 @@ define (require, exports, module) ->
 	
 	extension_id = "twttr4brackets"
 	extension_path = ExtensionUtils.getModulePath module
-	
-	configure = ->
-		config = {}
-		for value in ["proxy"]
-			config[value] = PreferencesManager.get value
-		
-		domain.exec "configure", config, "#{extension_path}config.json"
-	
+
 	connect = ->
 		createAlert "connecting..."
-		domain.exec "connect"
+		domain.exec "configure", {
+			"request_options": {
+				"proxy": PreferencesManager.get "proxy"
+			}
+		}, "#{extension_path}config.json"
+			.then ->
+				domain.exec "connect"
 			.done (user) ->
 				$ "##{extension_id} .me img"
 					.attr "src", user.profile_image_url
@@ -52,7 +51,6 @@ define (require, exports, module) ->
 		}
 		
 		if isvisible
-			configure()
 			connect()
 	
 	createPanel = ->
@@ -84,13 +82,7 @@ define (require, exports, module) ->
 	ExtensionUtils.loadStyleSheet module, "panel.css"
 	
 	domain = new NodeDomain "#{extension_id}-streaming", "#{extension_path}domain"
-	
-#	apply config from file
-	domain.exec "configure", null, "#{extension_path}config.json"
-		.done (config) ->
-#			apply config from brackets preference
-			configure()
-	
+
 	domain.on "data", (event, tweet) ->
 		created_at_html = Intl.DateTimeFormat undefined, {
 			"weekday": "short"
@@ -169,8 +161,8 @@ define (require, exports, module) ->
 		.on "click", (event) ->
 			domain.exec "authenticate"
 				.done ->
-					configure()
 					connect()
+					domain.exec "save", "#{extension_path}config.json"
 				.fail (error) ->
 					createAlert "authentication failed", error
 	

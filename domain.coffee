@@ -7,48 +7,38 @@ _domainManager = null
 _twitter = null
 _stream = null
 _config = {
-	"consumer_key": "",
-	"consumer_secret": "",
-	"token_key": ""
-	"token_secret": ""
-	"proxy": ""
+	"consumer_key": ""
+	"consumer_secret": ""
+	"access_token_key": ""
+	"access_token_secret": ""
+	"request_options": {
+		"proxy": ""
+	}
 }
 _domain_id = "twttr4brackets-streaming"
 
 _connect = (callback) ->
-	_twitter = new Twitter {
-		"consumer_key": _config.consumer_key
-		"consumer_secret": _config.consumer_secret
-		"access_token_key": _config.token_key
-		"access_token_secret": _config.token_secret
-		"request_options": {
-			"proxy": _config.proxy
-		}
-	}
+	_twitter = new Twitter _config
 	
-	if _stream?
-		_twitter.get "account/verify_credentials", (error, user, response) ->
-			if error?
-				_stream.destroy()
-				_stream = null
-			
-			callback error, user
-	else
-		_twitter.get "account/verify_credentials", (error, user, response) ->
-			if not error?
-				_twitter.stream "user", (stream) ->
-					stream.on "data", (tweet) ->
-						type = if tweet.text? then "data" else "event"
-						_domainManager.emitEvent _domain_id, type, tweet
-					stream.on "error", (error) ->
-						_domainManager.emitEvent _domain_id, "error", error
-						_stream = null
-					stream.on "end", ->
-						_domainManager.emitEvent _domain_id, "event", {"disconnect": true}
-						_stream = null
-					_stream = stream;
-			
-			callback error, user
+	_stream?.destroy()
+
+	_twitter.get "account/verify_credentials", (error, user, response) ->
+		if not error?
+			_twitter.stream "user", (stream) ->
+				stream.on "data", (tweet) ->
+					type = if tweet.text? then "data" else "event"
+					_domainManager.emitEvent _domain_id, type, tweet
+				stream.on "error", (error) ->
+					_domainManager.emitEvent _domain_id, "error", error
+					_stream = null
+				stream.on "end", ->
+					_domainManager.emitEvent _domain_id, "event", {"disconnect": true}
+					_stream = null
+				_stream = stream;
+		else
+			_stream = null
+
+		callback error, user
 
 _get = (callback) ->
 	_twitter.get "statuses/home_timeline", {
@@ -67,8 +57,8 @@ _post = (text, callback) ->
 
 _authenticate = (callback) ->
 	if _stream?
-		_config.token_key = ""
-		_config.token_secret = ""
+		_config.access_token_key = ""
+		_config.access_token_secret = ""
 		callback null
 	else
 		server = HTTP.createServer (request, response) ->
@@ -83,8 +73,8 @@ _authenticate = (callback) ->
 				.query
 			_twitter.post "oauth/access_token", param, (error, data, response) ->
 				if not error?
-					_config.token_key = data.oauth_token
-					_config.token_secret = data.oauth_token_secret
+					_config.access_token_key = data.oauth_token
+					_config.access_token_secret = data.oauth_token_secret
 				callback error
 		server.on "connection", ->
 			server.close()
@@ -102,27 +92,25 @@ _authenticate = (callback) ->
 				_domainManager.emitEvent _domain_id, "open_url", url
 
 _configure = (config, filename, callback) ->
-	if config?
-		_config.proxy = config.proxy if config.proxy?
-		
-		if filename?
-			data = JSON.stringify _config
-			FileSystem.writeFile filename, data, (error) ->
-				callback error
-		else
-			callback null
+	_config[key] = value for key, value of config when _config[key]?
+
+	if filename?
+		FileSystem.readFile filename, (error, data) ->
+			if not error?
+				try
+					data = JSON.parse data
+				catch catched
+					error = catched
+			else
+				data = []
+			_configure data, null, -> callback error
 	else
-		createConfig = ->
-			{
-				"proxy": _config.proxy
-			}
-		
-		if filename?
-			FileSystem.readFile filename, (error, data) ->
-				_config = JSON.parse data
-				callback error, createConfig()
-		else
-			callback null, createConfig()
+		callback null
+
+_save = (filename, callback) ->
+	data = JSON.stringify _config
+	FileSystem.writeFile filename, data, (error) ->
+		callback error
 
 _createLog = (message, error = null) ->
 	level = if error? then "error" else "log"
@@ -181,24 +169,30 @@ exports.init = (DomainManager) ->
 		"configure",
 		_configure,
 		true,
-		"configure for connection",
+		"apply config and load from file for connection",
 		[
 			{
 				"name": "config"
 				"type": "object"
-				"description": "config to apply. set null to get config"
+				"description": "configure to apply"
 			}
 			{
 				"name": "filename"
 				"type": "string"
-				"description": "if filename is'nt null, save to file or load from file"
+				"description": "optional. file to load config"
 			}
 		],
+		[]
+	DomainManager.registerCommand _domain_id,
+		"save",
+		_save,
+		true,
+		"save to file",
 		[
 			{
-				"name": "config"
-				"type": "object"
-				"description": "current config"
+				"name": "filename"
+				"type": "string"
+				"description": "file to save config"
 			}
 		]
 	
