@@ -164,9 +164,10 @@ define (require, exports, module) ->
 	$ "##{extension_id} .login"
 		.on "click", (event) ->
 			domain.exec "authenticate"
+				.then ->
+					domain.exec "save", "#{extension_path}config.json"
 				.done ->
 					connect()
-					domain.exec "save", "#{extension_path}config.json"
 				.fail (error) ->
 					createAlert "authentication failed", error
 	
