@@ -141,9 +141,10 @@
       });
     });
     return $("#" + extension_id + " .login").on("click", function(event) {
-      return domain.exec("authenticate").done(function() {
-        connect();
+      return domain.exec("authenticate").then(function() {
         return domain.exec("save", "" + extension_path + "config.json");
+      }).done(function() {
+        return connect();
       }).fail(function(error) {
         return createAlert("authentication failed", error);
       });
