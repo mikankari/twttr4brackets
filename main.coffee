@@ -13,11 +13,13 @@ define (require, exports, module) ->
 
 	connect = ->
 		createAlert "connecting..."
-		domain.exec "configure", {
-			"request_options": {
-				"proxy": PreferencesManager.get "proxy"
-			}
-		}, "#{extension_path}config.json"
+		domain.exec "load", "#{extension_path}config.json"
+			.then ->
+				domain.exec "load", {
+					"request_options": {
+						"proxy": PreferencesManager.get "proxy"
+					}
+				}
 			.then ->
 				domain.exec "connect"
 			.done (user) ->

@@ -10,11 +10,13 @@
     extension_path = ExtensionUtils.getModulePath(module);
     connect = function() {
       createAlert("connecting...");
-      return domain.exec("configure", {
-        "request_options": {
-          "proxy": PreferencesManager.get("proxy")
-        }
-      }, "" + extension_path + "config.json").then(function() {
+      return domain.exec("load", "" + extension_path + "config.json").then(function() {
+        return domain.exec("load", {
+          "request_options": {
+            "proxy": PreferencesManager.get("proxy")
+          }
+        });
+      }).then(function() {
         return domain.exec("connect");
       }).done(function(user) {
         $("#" + extension_id + " .me img").attr("src", user.profile_image_url);

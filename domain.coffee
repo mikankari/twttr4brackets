@@ -91,20 +91,22 @@ _authenticate = (callback) ->
 				].join ""
 				_domainManager.emitEvent _domain_id, "open_url", url
 
-_configure = (config, filename, callback) ->
-	_config[key] = value for key, value of config when _config[key]?
-
-	if filename?
-		FileSystem.readFile filename, (error, data) ->
+_load = (config, callback) ->
+	if typeof config is "string"
+		FileSystem.readFile config, (error, data) ->
 			if not error?
 				try
 					data = JSON.parse data
 				catch catched
 					error = catched
+					data = {}
 			else
-				data = []
-			_configure data, null, -> callback error
-	else
+				data = {}
+
+			_load data, -> callback error
+	else if typeof config is "object"
+		_config[key] = value for key, value of config when _config[key]?
+
 		callback null
 
 _save = (filename, callback) ->
@@ -166,20 +168,15 @@ exports.init = (DomainManager) ->
 		[],
 		[]
 	DomainManager.registerCommand _domain_id,
-		"configure",
-		_configure,
+		"load",
+		_load,
 		true,
-		"apply config and load from file for connection",
+		"apply config or load from file for connection",
 		[
 			{
 				"name": "config"
 				"type": "object"
-				"description": "configure to apply"
-			}
-			{
-				"name": "filename"
-				"type": "string"
-				"description": "optional. file to load config"
+				"description": "configure to apply. if type of config is file path string, file to load config"
 			}
 		],
 		[]
