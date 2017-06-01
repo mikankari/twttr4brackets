@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _configure, _connect, _createLog, _domainManager, _domain_id, _get, _post, _save, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _domainManager, _domain_id, _get, _load, _post, _save, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -126,16 +126,10 @@
     }
   };
 
-  _configure = function(config, filename, callback) {
+  _load = function(config, callback) {
     var key, value;
-    for (key in config) {
-      value = config[key];
-      if (_config[key] != null) {
-        _config[key] = value;
-      }
-    }
-    if (filename != null) {
-      return FileSystem.readFile(filename, function(error, data) {
+    if (typeof config === "string") {
+      return FileSystem.readFile(config, function(error, data) {
         var catched;
         if (error == null) {
           try {
@@ -143,15 +137,22 @@
           } catch (_error) {
             catched = _error;
             error = catched;
+            data = {};
           }
         } else {
-          data = [];
+          data = {};
         }
-        return _configure(data, null, function() {
+        return _load(data, function() {
           return callback(error);
         });
       });
-    } else {
+    } else if (typeof config === "object") {
+      for (key in config) {
+        value = config[key];
+        if (_config[key] != null) {
+          _config[key] = value;
+        }
+      }
       return callback(null);
     }
   };
@@ -200,15 +201,11 @@
       }
     ], []);
     DomainManager.registerCommand(_domain_id, "authenticate", _authenticate, true, "authenticate an user. fire the open-url event", [], []);
-    DomainManager.registerCommand(_domain_id, "configure", _configure, true, "apply config and load from file for connection", [
+    DomainManager.registerCommand(_domain_id, "load", _load, true, "apply config or load from file for connection", [
       {
         "name": "config",
         "type": "object",
-        "description": "configure to apply"
-      }, {
-        "name": "filename",
-        "type": "string",
-        "description": "optional. file to load config"
+        "description": "configure to apply. if type of config is file path string, file to load config"
       }
     ], []);
     DomainManager.registerCommand(_domain_id, "save", _save, true, "save to file", [
