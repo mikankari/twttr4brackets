@@ -19,11 +19,11 @@
       }).then(function() {
         return domain.exec("connect");
       }).done(function(user) {
-        $("#" + extension_id + " .me img").attr("src", user.profile_image_url);
+        $("#" + extension_id + " .me img").attr("src", user.profile_image_url).show().siblings(".default-icon").hide();
         $("#" + extension_id + " .login").text("Logout");
         return createAlert("connected");
       }).fail(function(error) {
-        $("#" + extension_id + " .me img").attr("src", "" + extension_path + "tweet-default-icon.png");
+        $("#" + extension_id + " .me img").attr("src", "").hide().siblings(".default-icon").show();
         $("#" + extension_id + " .login").text("Login");
         return createAlert("connecting failed", error);
       });

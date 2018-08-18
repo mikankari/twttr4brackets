@@ -25,12 +25,18 @@ define (require, exports, module) ->
 			.done (user) ->
 				$ "##{extension_id} .me img"
 					.attr "src", user.profile_image_url
+					.show()
+					.siblings ".default-icon"
+					.hide()
 				$ "##{extension_id} .login"
 					.text "Logout"
 				createAlert "connected"
 			.fail (error) ->
 				$ "##{extension_id} .me img"
-					.attr "src", "#{extension_path}tweet-default-icon.png"
+					.attr "src", ""
+					.hide()
+					.siblings ".default-icon"
+					.show()
 				$ "##{extension_id} .login"
 					.text "Login"
 				createAlert "connecting failed", error
