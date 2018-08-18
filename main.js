@@ -76,6 +76,7 @@
         "hour12": false,
         "minute": "2-digit"
       }).format(new Date(tweet.created_at));
+      created_at_html = "<a href=\"https://twitter.com/" + tweet.user.screen_name + "/status/" + tweet.id_str + "\" target=\"_blank\">" + created_at_html + "</a>";
       entities_html = "";
       text_html = "<span>" + tweet.text + "</span>";
       if (tweet.extended_entities == null) {
@@ -116,7 +117,7 @@
         user = _ref3[_l];
         text_html = text_html.replace("@" + user.screen_name, "<a href=\"https://twitter.com/" + user.screen_name + "\" target=\"_blank\">@" + user.screen_name + "</a>");
       }
-      tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").text(created_at_html).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
+      tweetDivision.clone().find(".icon img").attr("src", tweet.user.profile_image_url).end().find(".content2 .name").text(tweet.user.name).append($("<small>@" + tweet.user.screen_name + "</small>")).end().find(".content2 .time").append($(created_at_html)).end().find(".content2 .text").append($(text_html)).end().find(".content2 .attachment").append(entities_html).end().hide().prependTo("#" + extension_id + " .timeline").fadeIn();
       oldest = $("#" + extension_id + " .tweet:last-child");
       if (oldest.siblings().length >= 200) {
         oldest.remove();

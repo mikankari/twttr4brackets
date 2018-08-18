@@ -65,3 +65,5 @@
   #twttr4brackets .tweet .time {
     font-size: 0.85em;
     float: right; }
+    #twttr4brackets .tweet .time a {
+      color: inherit; }

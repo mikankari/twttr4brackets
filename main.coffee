@@ -99,6 +99,7 @@ define (require, exports, module) ->
 			"minute": "2-digit"
 		}
 			.format new Date tweet.created_at
+		created_at_html = "<a href=\"https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id_str}\" target=\"_blank\">#{created_at_html}</a>"
 
 		entities_html = ""
 		text_html = "<span>#{tweet.text}</span>"
@@ -130,7 +131,7 @@ define (require, exports, module) ->
 				.append $ "<small>@#{tweet.user.screen_name}</small>"
 				.end()
 			.find ".content2 .time"
-				.text created_at_html
+				.append $ created_at_html
 				.end()
 			.find ".content2 .text"
 				.append $ text_html
