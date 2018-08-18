@@ -43,6 +43,8 @@ _get = (callback) ->
 			_since_id = tweets[0].id_str if tweets.length > 1
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
+		else
+			_domainManager.emitEvent _domain_id, "error", tweets or error
 
 _post = (text, callback) ->
 	_twitter.post "statuses/update", {
@@ -86,6 +88,9 @@ _authenticate = (callback) ->
 					"oauth_token=#{data.oauth_token}"
 				].join ""
 				_domainManager.emitEvent _domain_id, "open_url", url
+			else
+				server.close()
+				callback data or error
 
 _load = (config, callback) ->
 	if typeof config is "string"

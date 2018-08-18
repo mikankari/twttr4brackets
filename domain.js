@@ -62,6 +62,8 @@
           _results.push(_domainManager.emitEvent(_domain_id, "data", value));
         }
         return _results;
+      } else {
+        return _domainManager.emitEvent(_domain_id, "error", tweets || error);
       }
     });
   };
@@ -114,6 +116,9 @@
         if (error == null) {
           url = ["https://api.twitter.com/oauth/authorize?", "oauth_token=" + data.oauth_token].join("");
           return _domainManager.emitEvent(_domain_id, "open_url", url);
+        } else {
+          server.close();
+          return callback(data || error);
         }
       });
     }
