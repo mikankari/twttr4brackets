@@ -36,7 +36,10 @@
       if (error == null) {
         _stream = global.setInterval(function() {
           return _get(function(error) {});
-        }, 3 * 60000);
+        }, 2 * 60000);
+        global.setTimeout(function() {
+          return _get(function(error) {});
+        }, 3000);
       } else {
         _stream = null;
       }
