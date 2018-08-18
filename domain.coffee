@@ -6,6 +6,7 @@ FileSystem = require "fs"
 _domainManager = null
 _twitter = null
 _stream = null
+_since_id = 1
 _config = {
 	"consumer_key": ""
 	"consumer_secret": ""
@@ -19,22 +20,14 @@ _domain_id = "twttr4brackets-streaming"
 
 _connect = (callback) ->
 	_twitter = new Twitter _config
-	
-	_stream?.destroy()
+
+	global.clearInterval _stream
 
 	_twitter.get "account/verify_credentials", (error, user, response) ->
 		if not error?
-			_twitter.stream "user", (stream) ->
-				stream.on "data", (tweet) ->
-					type = if tweet.text? then "data" else "event"
-					_domainManager.emitEvent _domain_id, type, tweet
-				stream.on "error", (error) ->
-					_domainManager.emitEvent _domain_id, "error", error
-					_stream = null
-				stream.on "end", ->
-					_domainManager.emitEvent _domain_id, "event", {"disconnect": true}
-					_stream = null
-				_stream = stream;
+			_stream = global.setInterval ->
+				_get (error) ->
+			, 3 * 60000
 		else
 			_stream = null
 
@@ -42,10 +35,12 @@ _connect = (callback) ->
 
 _get = (callback) ->
 	_twitter.get "statuses/home_timeline", {
-		"count": 200
+		"since_id": _since_id
+		"count": if _since_id is 1 then 20 else 200
 	}, (error, tweets, response) ->
 		callback error
 		if not error?
+			_since_id = tweets[0].id_str if tweets.length > 1
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 

@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _domainManager, _domain_id, _get, _load, _post, _save, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -15,6 +15,8 @@
 
   _stream = null;
 
+  _since_id = 1;
+
   _config = {
     "consumer_key": "",
     "consumer_secret": "",
@@ -29,29 +31,12 @@
 
   _connect = function(callback) {
     _twitter = new Twitter(_config);
-    if (_stream != null) {
-      _stream.destroy();
-    }
+    global.clearInterval(_stream);
     return _twitter.get("account/verify_credentials", function(error, user, response) {
       if (error == null) {
-        _twitter.stream("user", function(stream) {
-          stream.on("data", function(tweet) {
-            var type;
-            type = tweet.text != null ? "data" : "event";
-            return _domainManager.emitEvent(_domain_id, type, tweet);
-          });
-          stream.on("error", function(error) {
-            _domainManager.emitEvent(_domain_id, "error", error);
-            return _stream = null;
-          });
-          stream.on("end", function() {
-            _domainManager.emitEvent(_domain_id, "event", {
-              "disconnect": true
-            });
-            return _stream = null;
-          });
-          return _stream = stream;
-        });
+        _stream = global.setInterval(function() {
+          return _get(function(error) {});
+        }, 3 * 60000);
       } else {
         _stream = null;
       }
@@ -61,11 +46,15 @@
 
   _get = function(callback) {
     return _twitter.get("statuses/home_timeline", {
-      "count": 200
+      "since_id": _since_id,
+      "count": _since_id === 1 ? 20 : 200
     }, function(error, tweets, response) {
       var value, _i, _len, _results;
       callback(error);
       if (error == null) {
+        if (tweets.length > 1) {
+          _since_id = tweets[0].id_str;
+        }
         tweets.reverse();
         _results = [];
         for (_i = 0, _len = tweets.length; _i < _len; _i++) {
