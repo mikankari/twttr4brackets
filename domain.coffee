@@ -78,11 +78,12 @@ _authenticate = (callback) ->
 				callback error
 		server.on "connection", ->
 			server.close()
-		server.listen 0
-		info = server.address()
+		server.on "error", (error) ->
+			callback error if error?
+		server.listen port = 53939
 
 		_twitter.post "oauth/request_token", {
-			"oauth_callback": "http://localhost:#{info.port}/"
+			"oauth_callback": "http://localhost:#{port}/"
 		}, (error, data, response) ->
 			if not error?
 				url = [

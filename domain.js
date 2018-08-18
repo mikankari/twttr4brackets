@@ -86,7 +86,7 @@
   };
 
   _authenticate = function(callback) {
-    var info, server;
+    var port, server;
     if (_stream != null) {
       _config.access_token_key = "";
       _config.access_token_secret = "";
@@ -112,10 +112,14 @@
       server.on("connection", function() {
         return server.close();
       });
-      server.listen(0);
-      info = server.address();
+      server.on("error", function(error) {
+        if (error != null) {
+          return callback(error);
+        }
+      });
+      server.listen(port = 53939);
       return _twitter.post("oauth/request_token", {
-        "oauth_callback": "http://localhost:" + info.port + "/"
+        "oauth_callback": "http://localhost:" + port + "/"
       }, function(error, data, response) {
         var url;
         if (error == null) {
