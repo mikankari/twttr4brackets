@@ -21,7 +21,10 @@
       }).done(function(user) {
         $("#" + extension_id + " .me img").attr("src", user.profile_image_url).show().siblings(".default-icon").hide();
         $("#" + extension_id + " .login").text("Logout");
-        return createAlert("connected");
+        createAlert("connected");
+        return window.setTimeout(function() {
+          return domain.exec("get");
+        }, 3000);
       }).fail(function(error) {
         $("#" + extension_id + " .me img").attr("src", "").hide().siblings(".default-icon").show();
         $("#" + extension_id + " .login").text("Login");
@@ -138,7 +141,8 @@
       event.preventDefault();
       text = $(event.target).find("[name=text]").val();
       return domain.exec("post", text).done(function() {
-        return event.target.reset();
+        event.target.reset();
+        return domain.exec("get");
       }).fail(function(error) {
         return createAlert("tweeting failed.", error);
       });

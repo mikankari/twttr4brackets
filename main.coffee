@@ -31,6 +31,9 @@ define (require, exports, module) ->
 				$ "##{extension_id} .login"
 					.text "Logout"
 				createAlert "connected"
+				window.setTimeout ->
+					domain.exec "get"
+				, 3000
 			.fail (error) ->
 				$ "##{extension_id} .me img"
 					.attr "src", ""
@@ -167,6 +170,7 @@ define (require, exports, module) ->
 			domain.exec "post", text
 				.done ->
 					event.target.reset()
+					domain.exec "get"
 				.fail (error) ->
 					createAlert "tweeting failed.", error
 	

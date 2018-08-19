@@ -28,9 +28,6 @@ _connect = (callback) ->
 			_stream = global.setInterval ->
 				_get (error) ->
 			, 2 * 60000
-			global.setTimeout ->
-				_get (error) ->
-			, 3000
 		else
 			_stream = null
 
