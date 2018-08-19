@@ -43,7 +43,7 @@ _get = (callback) ->
 	}, (error, tweets, response) ->
 		callback error
 		if not error?
-			_since_id = tweets[0].id_str if tweets.length > 1
+			_since_id = tweets[0].id_str if tweets.length > 0
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 		else

@@ -55,7 +55,7 @@
       var value, _i, _len, _results;
       callback(error);
       if (error == null) {
-        if (tweets.length > 1) {
+        if (tweets.length > 0) {
           _since_id = tweets[0].id_str;
         }
         tweets.reverse();
