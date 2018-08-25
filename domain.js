@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _disconnect, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -31,7 +31,6 @@
 
   _connect = function(callback) {
     _twitter = new Twitter(_config);
-    global.clearInterval(_stream);
     return _twitter.get("account/verify_credentials", function(error, user, response) {
       if (error == null) {
         _stream = global.setInterval(function() {
@@ -42,6 +41,11 @@
       }
       return callback(error, user);
     });
+  };
+
+  _disconnect = function(callback) {
+    global.clearInterval(_stream);
+    return callback();
   };
 
   _get = function(callback) {
@@ -190,6 +194,7 @@
         "description": "an authenticated user"
       }
     ]);
+    DomainManager.registerCommand(_domain_id, "disconnect", _disconnect, true, "disconnect stream", [], []);
     DomainManager.registerCommand(_domain_id, "get", _get, true, "get 200 tweets of home_timeline. tweets send as the event", [], []);
     DomainManager.registerCommand(_domain_id, "post", _post, true, "post a tweet", [
       {

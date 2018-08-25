@@ -46,6 +46,8 @@
       });
       if (isvisible) {
         return connect();
+      } else {
+        return domain.exec("disconnect");
       }
     };
     createPanel = function() {
@@ -150,6 +152,8 @@
     return $("#" + extension_id + " .login").on("click", function(event) {
       return domain.exec("authenticate").then(function() {
         return domain.exec("save", "" + extension_path + "config.json");
+      }).then(function() {
+        return domain.exec("disconnect");
       }).done(function() {
         return connect();
       }).fail(function(error) {

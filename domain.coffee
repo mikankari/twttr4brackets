@@ -21,8 +21,6 @@ _domain_id = "twttr4brackets-streaming"
 _connect = (callback) ->
 	_twitter = new Twitter _config
 
-	global.clearInterval _stream
-
 	_twitter.get "account/verify_credentials", (error, user, response) ->
 		if not error?
 			_stream = global.setInterval ->
@@ -32,6 +30,10 @@ _connect = (callback) ->
 			_stream = null
 
 		callback error, user
+
+_disconnect = (callback) ->
+	global.clearInterval _stream
+	callback()
 
 _get = (callback) ->
 	_twitter.get "statuses/home_timeline", {
@@ -141,6 +143,13 @@ exports.init = (DomainManager) ->
 				"description": "an authenticated user"
 			}
 		]
+	DomainManager.registerCommand _domain_id,
+		"disconnect",
+		_disconnect,
+		true,
+		"disconnect stream",
+		[],
+		[]
 	DomainManager.registerCommand _domain_id,
 		"get",
 		_get,

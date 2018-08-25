@@ -63,6 +63,8 @@ define (require, exports, module) ->
 		
 		if isvisible
 			connect()
+		else
+			domain.exec "disconnect"
 	
 	createPanel = ->
 		$ require "text!panel.html"
@@ -179,6 +181,8 @@ define (require, exports, module) ->
 			domain.exec "authenticate"
 				.then ->
 					domain.exec "save", "#{extension_path}config.json"
+				.then ->
+					domain.exec "disconnect"
 				.done ->
 					connect()
 				.fail (error) ->
