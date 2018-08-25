@@ -7,6 +7,7 @@ _domainManager = null
 _twitter = null
 _stream = null
 _since_id = 1
+_count = 20
 _config = {
 	"consumer_key": ""
 	"consumer_secret": ""
@@ -33,16 +34,19 @@ _connect = (callback) ->
 
 _disconnect = (callback) ->
 	global.clearInterval _stream
+	_count = 20
 	callback()
 
 _get = (callback) ->
 	_twitter.get "statuses/home_timeline", {
 		"since_id": _since_id
-		"count": if _since_id is 1 then 20 else 200
+		"count": _count
 	}, (error, tweets, response) ->
 		callback error
 		if not error?
-			_since_id = tweets[0].id_str if tweets.length > 0
+			if tweets.length > 0
+				_since_id = tweets[0].id_str
+				_count = 200
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 		else

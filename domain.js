@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _disconnect, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _count, _createLog, _disconnect, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -16,6 +16,8 @@
   _stream = null;
 
   _since_id = 1;
+
+  _count = 20;
 
   _config = {
     "consumer_key": "",
@@ -45,19 +47,21 @@
 
   _disconnect = function(callback) {
     global.clearInterval(_stream);
+    _count = 20;
     return callback();
   };
 
   _get = function(callback) {
     return _twitter.get("statuses/home_timeline", {
       "since_id": _since_id,
-      "count": _since_id === 1 ? 20 : 200
+      "count": _count
     }, function(error, tweets, response) {
       var value, _i, _len, _results;
       callback(error);
       if (error == null) {
         if (tweets.length > 0) {
           _since_id = tweets[0].id_str;
+          _count = 200;
         }
         tweets.reverse();
         _results = [];
