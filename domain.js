@@ -37,7 +37,7 @@
       if (error == null) {
         _stream = global.setInterval(function() {
           return _get(function(error) {});
-        }, 2 * 60000);
+        }, 3 * 60000);
       } else {
         _stream = null;
       }
