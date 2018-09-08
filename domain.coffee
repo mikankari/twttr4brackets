@@ -50,6 +50,7 @@ _get = (callback) ->
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 		else
+			disconnect()
 			_domainManager.emitEvent _domain_id, "error", tweets or error
 
 _post = (text, callback) ->

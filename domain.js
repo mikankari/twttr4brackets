@@ -71,6 +71,7 @@
         }
         return _results;
       } else {
+        disconnect();
         return _domainManager.emitEvent(_domain_id, "error", tweets || error);
       }
     });
