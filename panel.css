@@ -10,9 +10,16 @@
   height: 100%;
   overflow-y: scroll; }
 #twttr4brackets .icon img {
-  border-radius: 3px;
+  border-radius: 50%;
+  vertical-align: top;
   width: 48px;
   height: 48px; }
+#twttr4brackets .icon .default-icon {
+  border-radius: 50%;
+  border: 2px dotted #bbbbbb;
+  width: 44px;
+  height: 44px;
+  display: inline-block; }
 #twttr4brackets .attachment img {
   margin-top: 0.5em;
   margin-right: 5px;
@@ -43,7 +50,7 @@
   width: calc(100% - 230px);
   max-width: 530px; }
 #twttr4brackets .tweet {
-  padding-bottom: 15px; }
+  padding-bottom: 12px; }
   #twttr4brackets .tweet .content2 {
     width: 80%;
     width: calc(100% - 60px);
@@ -58,3 +65,5 @@
   #twttr4brackets .tweet .time {
     font-size: 0.85em;
     float: right; }
+    #twttr4brackets .tweet .time a {
+      color: inherit; }

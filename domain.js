@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _createLog, _domainManager, _domain_id, _get, _load, _post, _save, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _count, _createLog, _disconnect, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -15,6 +15,10 @@
 
   _stream = null;
 
+  _since_id = 1;
+
+  _count = 20;
+
   _config = {
     "consumer_key": "",
     "consumer_secret": "",
@@ -29,29 +33,15 @@
 
   _connect = function(callback) {
     _twitter = new Twitter(_config);
-    if (_stream != null) {
-      _stream.destroy();
-    }
     return _twitter.get("account/verify_credentials", function(error, user, response) {
       if (error == null) {
-        _twitter.stream("user", function(stream) {
-          stream.on("data", function(tweet) {
-            var type;
-            type = tweet.text != null ? "data" : "event";
-            return _domainManager.emitEvent(_domain_id, type, tweet);
+        _stream = global.setInterval(function() {
+          return _get(function(error) {
+            if (error != null) {
+              return _disconnect(function(error) {});
+            }
           });
-          stream.on("error", function(error) {
-            _domainManager.emitEvent(_domain_id, "error", error);
-            return _stream = null;
-          });
-          stream.on("end", function() {
-            _domainManager.emitEvent(_domain_id, "event", {
-              "disconnect": true
-            });
-            return _stream = null;
-          });
-          return _stream = stream;
-        });
+        }, 3 * 60000);
       } else {
         _stream = null;
       }
@@ -59,13 +49,24 @@
     });
   };
 
+  _disconnect = function(callback) {
+    global.clearInterval(_stream);
+    _count = 20;
+    return callback();
+  };
+
   _get = function(callback) {
     return _twitter.get("statuses/home_timeline", {
-      "count": 200
+      "since_id": _since_id,
+      "count": _count
     }, function(error, tweets, response) {
       var value, _i, _len, _results;
       callback(error);
       if (error == null) {
+        if (tweets.length > 0) {
+          _since_id = tweets[0].id_str;
+          _count = 200;
+        }
         tweets.reverse();
         _results = [];
         for (_i = 0, _len = tweets.length; _i < _len; _i++) {
@@ -73,6 +74,8 @@
           _results.push(_domainManager.emitEvent(_domain_id, "data", value));
         }
         return _results;
+      } else {
+        return _domainManager.emitEvent(_domain_id, "error", tweets || error);
       }
     });
   };
@@ -86,7 +89,7 @@
   };
 
   _authenticate = function(callback) {
-    var info, server;
+    var port, server;
     if (_stream != null) {
       _config.access_token_key = "";
       _config.access_token_secret = "";
@@ -112,15 +115,22 @@
       server.on("connection", function() {
         return server.close();
       });
-      server.listen(0);
-      info = server.address();
+      server.on("error", function(error) {
+        if (error != null) {
+          return callback(error);
+        }
+      });
+      server.listen(port = 53939);
       return _twitter.post("oauth/request_token", {
-        "oauth_callback": "http://localhost:" + info.port + "/"
+        "oauth_callback": "http://localhost:" + port + "/"
       }, function(error, data, response) {
         var url;
         if (error == null) {
           url = ["https://api.twitter.com/oauth/authorize?", "oauth_token=" + data.oauth_token].join("");
           return _domainManager.emitEvent(_domain_id, "open_url", url);
+        } else {
+          server.close();
+          return callback(data || error);
         }
       });
     }
@@ -192,6 +202,7 @@
         "description": "an authenticated user"
       }
     ]);
+    DomainManager.registerCommand(_domain_id, "disconnect", _disconnect, true, "disconnect stream", [], []);
     DomainManager.registerCommand(_domain_id, "get", _get, true, "get 200 tweets of home_timeline. tweets send as the event", [], []);
     DomainManager.registerCommand(_domain_id, "post", _post, true, "post a tweet", [
       {
