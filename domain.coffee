@@ -25,7 +25,7 @@ _connect = (callback) ->
 	_twitter.get "account/verify_credentials", (error, user, response) ->
 		if not error?
 			_stream = global.setInterval ->
-				_get (error) ->
+				_get (error) -> if error? then _disconnect (error) ->
 			, 3 * 60000
 		else
 			_stream = null
@@ -50,7 +50,6 @@ _get = (callback) ->
 			tweets.reverse()
 			_domainManager.emitEvent _domain_id, "data", value for value in tweets
 		else
-			disconnect()
 			_domainManager.emitEvent _domain_id, "error", tweets or error
 
 _post = (text, callback) ->

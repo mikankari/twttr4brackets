@@ -36,7 +36,11 @@
     return _twitter.get("account/verify_credentials", function(error, user, response) {
       if (error == null) {
         _stream = global.setInterval(function() {
-          return _get(function(error) {});
+          return _get(function(error) {
+            if (error != null) {
+              return _disconnect(function(error) {});
+            }
+          });
         }, 3 * 60000);
       } else {
         _stream = null;
@@ -71,7 +75,6 @@
         }
         return _results;
       } else {
-        disconnect();
         return _domainManager.emitEvent(_domain_id, "error", tweets || error);
       }
     });
