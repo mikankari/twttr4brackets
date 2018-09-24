@@ -74,29 +74,37 @@ _authenticate = (callback) ->
 
 			param = URL.parse request.url, true
 				.query
-			_twitter.post "oauth/access_token", param, (error, data, response) ->
+			_twitter.post "https://api.twitter.com/oauth/access_token", param, _handleQueryString (error, data, response) ->
 				if not error?
 					_config.access_token_key = data.oauth_token
 					_config.access_token_secret = data.oauth_token_secret
-				callback error
+					callback null
+				else
+					callback data or error
 		server.on "connection", ->
 			server.close()
 		server.on "error", (error) ->
 			callback error if error?
 		server.listen port = 53939
 
-		_twitter.post "oauth/request_token", {
+		_twitter.post "https://api.twitter.com/oauth/request_token", {
 			"oauth_callback": "http://localhost:#{port}/"
-		}, (error, data, response) ->
+		}, _handleQueryString (error, data, response) ->
 			if not error?
-				url = [
-					"https://api.twitter.com/oauth/authorize?"
-					"oauth_token=#{data.oauth_token}"
-				].join ""
-				_domainManager.emitEvent _domain_id, "open_url", url
+				_domainManager.emitEvent _domain_id, "open_url", "https://api.twitter.com/oauth/authorize?oauth_token=#{data.oauth_token}"
 			else
 				server.close()
 				callback data or error
+
+_handleQueryString = (callback) ->
+	(error, data, response) ->
+		if response.statusCode is 200 # error is `{}`, data is not json
+			error = null
+			data = {}
+			response.body.split "&"
+				.map (item) -> item.split "="
+				.forEach (item) -> data[item[0]] = item[1]
+		callback error, data, response
 
 _load = (config, callback) ->
 	if typeof config is "string"

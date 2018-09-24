@@ -1,5 +1,5 @@
 (function() {
-  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _count, _createLog, _disconnect, _domainManager, _domain_id, _get, _load, _post, _save, _since_id, _stream, _twitter;
+  var FileSystem, HTTP, Twitter, URL, _authenticate, _config, _connect, _count, _createLog, _disconnect, _domainManager, _domain_id, _get, _handleQueryString, _load, _post, _save, _since_id, _stream, _twitter;
 
   Twitter = require("twitter");
 
@@ -104,13 +104,15 @@
         response.write("<p>see brackets. this window will close.</p><script> window.setTimeout(function(){ window.open(\"about:blank\", \"_self\").close(); }, 3000) </script>");
         response.end();
         param = URL.parse(request.url, true).query;
-        return _twitter.post("oauth/access_token", param, function(error, data, response) {
+        return _twitter.post("https://api.twitter.com/oauth/access_token", param, _handleQueryString(function(error, data, response) {
           if (error == null) {
             _config.access_token_key = data.oauth_token;
             _config.access_token_secret = data.oauth_token_secret;
+            return callback(null);
+          } else {
+            return callback(data || error);
           }
-          return callback(error);
-        });
+        }));
       });
       server.on("connection", function() {
         return server.close();
@@ -121,19 +123,32 @@
         }
       });
       server.listen(port = 53939);
-      return _twitter.post("oauth/request_token", {
+      return _twitter.post("https://api.twitter.com/oauth/request_token", {
         "oauth_callback": "http://localhost:" + port + "/"
-      }, function(error, data, response) {
-        var url;
+      }, _handleQueryString(function(error, data, response) {
         if (error == null) {
-          url = ["https://api.twitter.com/oauth/authorize?", "oauth_token=" + data.oauth_token].join("");
-          return _domainManager.emitEvent(_domain_id, "open_url", url);
+          return _domainManager.emitEvent(_domain_id, "open_url", "https://api.twitter.com/oauth/authorize?oauth_token=" + data.oauth_token);
         } else {
           server.close();
           return callback(data || error);
         }
-      });
+      }));
     }
+  };
+
+  _handleQueryString = function(callback) {
+    return function(error, data, response) {
+      if (response.statusCode === 200) {
+        error = null;
+        data = {};
+        response.body.split("&").map(function(item) {
+          return item.split("=");
+        }).forEach(function(item) {
+          return data[item[0]] = item[1];
+        });
+      }
+      return callback(error, data, response);
+    };
   };
 
   _load = function(config, callback) {
