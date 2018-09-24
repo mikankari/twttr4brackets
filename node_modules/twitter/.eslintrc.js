@@ -15,7 +15,7 @@ module.exports = {
     'curly': 2,
     'eqeqeq': 2,
     'max-depth': 2,
-    'max-statements': [2, 16],
+    'max-statements': [2, 20],
     'new-cap': 2,
     'no-caller': 2,
     'no-cond-assign': 2,
@@ -27,5 +27,8 @@ module.exports = {
     'space-before-function-paren': [2, 'never'],
     'strict': 2,
     'wrap-iife': [2, 'inside']
+  },
+  globals: {
+    'Promise': true
   }
 };
