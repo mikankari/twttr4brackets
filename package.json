@@ -1,8 +1,11 @@
 {
-	"name": "io.github.mikankari.twttr4brackets",
-	"version": "1.0.2",
-	"title": "Twitter for Brackets",
-	"description": "Twitter client on Adobe Brackets",
-	"homepage": "https://github.com/mikankari/twttr4brackets/",
-	"author": "mikankari"
+  "name": "io.github.mikankari.twttr4brackets",
+  "version": "1.0.2",
+  "title": "Twitter for Brackets",
+  "description": "Twitter client on Adobe Brackets",
+  "homepage": "https://github.com/mikankari/twttr4brackets/",
+  "author": "mikankari",
+  "dependencies": {
+    "twitter": "^1.7.1"
+  }
 }
